@@ -29,4 +29,4 @@ Run: `python -m src.cv_utils`
 
 - Primary: **5-fold OOF** with threshold tuned on pooled OOF probabilities
 - Secondary: **time-based CV** on `ApprovalDate_year` for LightGBM monitoring
-- Fallback submission: **base-rate threshold** (~79.6% predicted approvals)
+- Fallback submission: **base-rate threshold** (~79.6% predicted approvals) — tested on Kaggle as `rf_lgbm_baserate.csv`, public **0.63594** (not used as final; see [KAGGLE_SUBMISSIONS.md](KAGGLE_SUBMISSIONS.md))

@@ -1,5 +1,7 @@
 # Models and methods — reference for report / slides
 
+Related docs: [PRESENTATION_BRIEF.md](PRESENTATION_BRIEF.md) · [BUSINESS_USAGE.md](BUSINESS_USAGE.md) · [DIAGNOSTICS.md](DIAGNOSTICS.md) · [KAGGLE_SUBMISSIONS.md](KAGGLE_SUBMISSIONS.md) · [NEXT_STEPS.md](NEXT_STEPS.md)
+
 ## Problem framing
 
 Binary classification: predict `Accept` (1 = loan granted, 0 = denied) for small-business loan applications. Metric: **Macro F1** (equal weight on grant and deny classes). Training data is imbalanced (~80% granted).
