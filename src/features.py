@@ -119,8 +119,10 @@ def prepare_features(X: pd.DataFrame) -> pd.DataFrame:
 
     # ── 3. Engineered numeric features ───────────────────────────────────────
     if "DisbursementGross" in out.columns:
-        # Log-transform reduces right skew; +1 avoids log(0)
+        # Log-transform reduces right skew; +1 avoids log(0).
+        # Raw DisbursementGross is dropped — log version contains all signal.
         out["log_DisbursementGross"] = np.log1p(out["DisbursementGross"])
+        out = out.drop(columns=["DisbursementGross"])
 
     if {"NoEmp", "RetainedJob", "CreateJob"}.issubset(out.columns):
         total_jobs = out["RetainedJob"] + out["CreateJob"]
@@ -146,11 +148,9 @@ def prepare_features(X: pd.DataFrame) -> pd.DataFrame:
             out["ApprovalDate_year"].between(2007, 2010)
         ).astype("Int8")
 
-    # ── 5. ApprovalFY → int ───────────────────────────────────────────────────
+    # ── 5. ApprovalFY — dropped (ApprovalDate_year carries the same signal) ──
     if "ApprovalFY" in out.columns:
-        out["ApprovalFY"] = pd.to_numeric(out["ApprovalFY"], errors="coerce").astype(
-            "Int16"
-        )
+        out = out.drop(columns=["ApprovalFY"])
 
     # ── 6. Binary flag columns ────────────────────────────────────────────────
     for col, yes_vals in _BINARY_FLAG_MAP.items():
