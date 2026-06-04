@@ -62,6 +62,20 @@ Available `--model` options: `lr`, `rf`, `xgb`, `lgbm`
 
 ---
 
+## Score tracker
+
+| Run | CV Macro F1 | Val Macro F1 | Command | Submission |
+|-----|-------------|-------------|---------|-----------|
+| LR baseline | 0.6452 | — | `python -m src.train --model lr` | `lr.csv` |
+| RF | 0.7342 | 0.7445 | `python -m src.train --model rf` | `rf.csv` |
+| LightGBM | 0.7291 | 0.7505 | `python -m src.train --model lgbm` | `lgbm.csv` |
+| Ensemble (RF+LGBM+XGB) | 0.7441 | 0.7542 | `python -m src.advanced --no-optuna` | `ensemble_advanced.csv` ✅ |
+| Ensemble + Optuna 50 trials | — | — | `python -m src.advanced --trials 50` | in progress |
+
+> Upload the highest val F1 submission to Kaggle. Mark your 2 best before the deadline.
+
+---
+
 ## Improvement roadmap
 
 ### Phase 1 — Feature Engineering (`src/features.py`)
