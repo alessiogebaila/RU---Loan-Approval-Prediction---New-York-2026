@@ -2,7 +2,25 @@
 
 Competition: [Kaggle — ru-loan-approval-prediction-new-york](https://www.kaggle.com/competitions/ru-loan-approval-prediction-new-york)  
 Metric: **Macro F1-Score** | Up to 100 Kaggle submissions/day  
-Deadline: **Friday 5 June 2026, 22:00** (notebooks + slides + authorship PDF)
+Deadline: **Friday 5 June 2026, 22:00** (notebooks + slides + authorship PDF by email)  
+Repo: [github.com/floringk/RU---Loan-Approval-Prediction---New-York-2026](https://github.com/floringk/RU---Loan-Approval-Prediction---New-York-2026)
+
+---
+
+## Team tasks (deadline checklist)
+
+See **[TASKS.md](TASKS.md)** for the full list with role split. Summary:
+
+| Priority | Task | Owner | Done |
+|----------|------|-------|------|
+| P0 | Upload `submissions/ensemble_advanced.csv` to Kaggle | | [ ] |
+| P0 | Mark **2 best** Kaggle submissions as final | | [ ] |
+| P0 | Run All on notebooks `01`–`04`, save outputs | | [ ] |
+| P0 | Presentation slides (bank risk narrative) | | [ ] |
+| P0 | Authorship PDF (members × notebooks) | | [ ] |
+| P0 | Email slides + notebooks + PDF before 22:00 Fri | | [ ] |
+| P1 | Record public Kaggle Macro F1 in score table below | | [ ] |
+| P2 | Optional: `python -m src.advanced --trials 15` | | [ ] |
 
 ---
 
@@ -10,32 +28,32 @@ Deadline: **Friday 5 June 2026, 22:00** (notebooks + slides + authorship PDF)
 
 ```
 ru-loan-approval-ny/
-├── data/
-│   ├── train.csv            # 40 385 rows × 21 cols  (not in git)
-│   ├── test_nolabel.csv     # 7 050 rows × 20 cols   (not in git)
-│   └── sample_submission.csv
+├── data/                    # train/test CSVs (not in git — download locally)
 ├── notebooks/
-│   ├── 01_eda.ipynb                 # Target balance, nulls, cardinality, leakage
-│   ├── 02_baseline.ipynb            # Logistic Regression → first submission
-│   ├── 03_feature_engineering.ipynb # All transformations documented
-│   └── 04_model_comparison.ipynb    # RF / XGB / LGBM + threshold tuning
+│   ├── 01_eda.ipynb
+│   ├── 02_baseline.ipynb
+│   ├── 03_feature_engineering.ipynb
+│   └── 04_model_comparison.ipynb
 ├── src/
-│   ├── features.py   # prepare_features(), build_preprocessor()
-│   └── train.py      # CLI trainer — supports lr / rf / xgb / lgbm
-├── submissions/       # Generated CSVs for Kaggle (not in git)
-├── models/            # Saved .joblib artefacts (not in git)
+│   ├── features.py          # prepare_features()
+│   ├── train.py             # CLI: lr / rf / xgb / lgbm
+│   └── advanced.py          # TargetEncoder + ensemble + Optuna
+├── submissions/             # Kaggle CSVs (not in git)
+├── scripts/setup-kaggle.ps1
 ├── requirements.txt
-└── scripts/
-    └── setup-kaggle.ps1
+├── TASKS.md                 # Team checklist
+└── README.md
 ```
 
 ---
 
 ## Quick start
 
-### 1. Install dependencies
+### 1. Clone and install
 
 ```powershell
+git clone https://github.com/floringk/RU---Loan-Approval-Prediction---New-York-2026.git
+cd RU---Loan-Approval-Prediction---New-York-2026
 pip install -r requirements.txt
 ```
 
@@ -46,168 +64,109 @@ kaggle competitions download -c ru-loan-approval-prediction-new-york -p data
 Expand-Archive data\ru-loan-approval-prediction-new-york.zip -DestinationPath data -Force
 ```
 
-### 3. Run baseline (Logistic Regression)
+### 3. Generate best submission (ensemble)
 
 ```powershell
-python -m src.train --model lr --output submissions/lr.csv
+python -m src.advanced --no-optuna
+# → submissions/ensemble_advanced.csv
 ```
 
-### 4. Run best model (LightGBM + threshold tuning)
+### 4. Single-model alternatives
 
 ```powershell
-python -m src.train --model lgbm --output submissions/lgbm_tuned.csv
+python -m src.train --model lgbm --output submissions/lgbm.csv
+python -m src.train --model rf   --output submissions/rf.csv
 ```
-
-Available `--model` options: `lr`, `rf`, `xgb`, `lgbm`
 
 ---
 
 ## Score tracker
 
 | Run | CV Macro F1 | Val Macro F1 | Command | Submission |
-|-----|-------------|-------------|---------|-----------|
-| LR baseline | 0.6452 | — | `python -m src.train --model lr` | `lr.csv` |
+|-----|-------------|-------------|---------|------------|
+| LR baseline | 0.6452 | — | `python -m src.train --model lr` | `baseline.csv` |
 | RF | 0.7342 | 0.7445 | `python -m src.train --model rf` | `rf.csv` |
 | LightGBM | 0.7291 | 0.7505 | `python -m src.train --model lgbm` | `lgbm.csv` |
-| Ensemble (RF+LGBM+XGB) | 0.7441 | 0.7542 | `python -m src.advanced --no-optuna` | `ensemble_advanced.csv` ✅ |
-| Ensemble + Optuna 50 trials | — | — | `python -m src.advanced --trials 50` | in progress |
-
-> Upload the highest val F1 submission to Kaggle. Mark your 2 best before the deadline.
-
----
-
-## Improvement roadmap
-
-### Phase 1 — Feature Engineering (`src/features.py`)
-
-| Task | Detail | Status |
-|------|--------|--------|
-| Drop identifiers | `id`, `LoanNr_ChkDgt`, `Name` | ✅ Done |
-| Drop zero-variance | `BalanceGross` is `$0.00` for all rows | ✅ Done |
-| Parse currency | `DisbursementGross` `"$350,000.00"` → `350000.0` | ✅ Done |
-| Log-transform loan amount | `log1p(DisbursementGross)` reduces right skew | ✅ Done |
-| Parse dates | `ApprovalDate`, `DisbursementDate` → `_year`, `_month` | ✅ Done |
-| Disbursement lag | `DisbursementDate_year - ApprovalDate_year` (risk signal) | ✅ Done |
-| Crisis indicator | `is_crisis_period` = 1 if approved 2007–2010 | ✅ Done |
-| Binary flag: RevLineCr | `Y → 1`, all other codes → 0 | ✅ Done |
-| Binary flag: LowDoc | `Y → 1`, all other codes → 0 | ✅ Done |
-| FranchiseCode → bool | `is_franchised = 1` if code not in {0, 1} | ✅ Done |
-| Job ratio | `(RetainedJob + CreateJob) / NoEmp` clipped at 10 | ✅ Done |
-| OHE max_categories | Limit City (2 552 levels) to top 50 to avoid dimension explosion | ✅ Done |
-
-**Next feature ideas (not yet implemented):**
-
-| Task | Detail |
-|------|--------|
-| Target-encode Bank | Bank approval rate computed on train fold only (use `sklearn.TargetEncoder`) |
-| Target-encode City | Same — city-level approval rate |
-| State stays as-is | Only 1 unique value (NY) → drop it |
-| Loan-size bins | `pd.qcut(DisbursementGross, 5)` → ordinal bucket feature |
-| Sector proxy | `FranchiseCode` detail maps to SIC sector (requires external lookup) |
+| **Ensemble (recommended)** | **0.7441** | **0.7542** | `python -m src.advanced --no-optuna` | **`ensemble_advanced.csv`** |
+| Optuna 50 trials | 0.7371 @ trial 12 | — | `python -m src.advanced --trials 50` | aborted (20/50) |
+| **Kaggle public score** | — | — | upload above | _fill in after submit_ |
 
 ---
 
-### Phase 2 — Model Selection (`src/train.py`)
+## Assignment alignment
 
-| Model | Scikit-learn compatible | Expected CV F1 | Notes |
-|-------|------------------------|---------------|-------|
-| Logistic Regression | Yes | ~0.65 | Baseline, fast |
-| Random Forest | Yes | ~0.70–0.73 | Good generalisation |
-| **XGBoost** | Yes (wrapper) | ~0.72–0.76 | `scale_pos_weight=4` for imbalance |
-| **LightGBM** | Yes (wrapper) | ~0.72–0.76 | `is_unbalance=True`, fastest |
-| CatBoost | Yes (wrapper) | ~0.73–0.77 | Best for high-cardinality cats |
+| Course requirement | Status |
+|--------------------|--------|
+| Classifier: grant vs deny (`Accept`) | Done |
+| Same preprocessing on train and test | `prepare_features()` |
+| No test rows dropped | 7 050 predictions |
+| CSV format: `id`, `Accept` (int) | Done |
+| Compete on Macro F1 | Local val 0.7542; upload for public LB |
+| Explain bank risk (why grant/deny) | Slides + notebook narrative — **todo** |
+| 2 final Kaggle picks | **todo** |
+| Slides + notebooks + authorship PDF | **todo** |
 
-Run all four and compare: `notebooks/04_model_comparison.ipynb`
-
-**Class imbalance** (80 % Accept=1, 20 % Accept=0):
-- Tree models: use `is_unbalance=True` / `scale_pos_weight`
-- Alternative: SMOTE (`imblearn.over_sampling.SMOTE`) applied inside CV folds only
-
----
-
-### Phase 3 — Threshold Tuning
-
-Default threshold (0.5) is not optimal for Macro F1. The minority class (denied loans) requires a lower threshold to improve recall.
+Submission matches the course example:
 
 ```python
-# Already implemented in src/train.py::_best_threshold()
-thresholds = np.linspace(0.1, 0.9, 81)
-best_t = max(thresholds, key=lambda t: f1_macro(y_val, proba_val >= t))
+submission = test[["id"]].copy()
+submission["Accept"] = preds.astype(int)
+submission.to_csv("submissions/ensemble_advanced.csv", index=False)
 ```
-
-Typical optimal range: **0.30–0.45** for this dataset.
 
 ---
 
-### Phase 4 — Hyperparameter Tuning (Optuna)
+## Model pipeline (implemented)
 
-```python
-# Already scaffolded in notebooks/04_model_comparison.ipynb, cell 7
-study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=100)
-```
-
-Key LightGBM parameters to search:
-
-| Parameter | Search range |
-|-----------|-------------|
-| `n_estimators` | 200–1000 |
-| `learning_rate` | 0.01–0.2 (log) |
-| `num_leaves` | 15–127 |
-| `subsample` | 0.5–1.0 |
-| `colsample_bytree` | 0.5–1.0 |
-| `reg_alpha` | 1e-4–10 (log) |
-| `reg_lambda` | 1e-4–10 (log) |
-| `min_child_samples` | 5–100 |
-
-Expected gain over default LightGBM: **+1–3 pp Macro F1**.
+1. **Features** (`src/features.py`) — currency/dates, flags, `log_DisbursementGross`, job ratio, crisis period  
+2. **Encoding** (`src/advanced.py`) — `TargetEncoder` on `Bank` and `City`  
+3. **Models** — RF + LightGBM + XGBoost soft-vote ensemble  
+4. **Threshold** — tuned on validation (~0.43) for Macro F1  
 
 ---
 
-### Phase 5 — Ensembling
+## Publish to GitHub
 
-```python
-from sklearn.ensemble import VotingClassifier
-ensemble = VotingClassifier(
-    estimators=[('rf', rf_pipe), ('xgb', xgb_pipe), ('lgbm', lgbm_pipe)],
-    voting='soft',
-)
-```
-
-Soft voting on predicted probabilities before applying the tuned threshold.
-
----
-
-## Submission workflow
+From `ru-loan-approval-ny/` (only code and notebooks are tracked; not `data/` or `submissions/`):
 
 ```powershell
-# 1. Generate submission
-python -m src.train --model lgbm --output submissions/lgbm_tuned.csv
+cd "c:\Users\florin.ostafe\RU - Loan Approval Prediction - New York 2026\ru-loan-approval-ny"
 
-# 2. Upload on Kaggle website → Submit Predictions
-# 3. Record public Macro F1 score
-# 4. Before deadline: mark your 2 best submissions as final
+git status
+git add README.md TASKS.md src/ notebooks/ requirements.txt scripts/ .gitignore data/.gitkeep submissions/.gitkeep
+git commit -m "docs: add team task list, update README and publish instructions"
+
+git remote -v
+# should show: origin  https://github.com/floringk/RU---Loan-Approval-Prediction---New-York-2026.git
+
+git push origin master
 ```
+
+First-time setup (if remote missing):
+
+```powershell
+git remote add origin https://github.com/floringk/RU---Loan-Approval-Prediction---New-York-2026.git
+git push -u origin master
+```
+
+**Do not commit:** `data/*.csv`, `submissions/*.csv`, `.kaggle/` tokens (see `.gitignore`).
 
 ---
 
 ## Course deliverables (due Friday 5 June 22:00)
 
-- [ ] **Presentation slides** — frame as "bank risk analysis"; explain features, model choice, and which loans are risky and why
-- [ ] **Notebooks** — 01 through 04, all cells run with output
-- [ ] **Authorship PDF** — table: rows = notebooks, columns = group members
-- [ ] **2 Kaggle submissions marked** as your final entries
+- [ ] **Presentation slides** — bank risk analysis; features; model; example companies  
+- [ ] **Notebooks** — `01`–`04` with all cells executed  
+- [ ] **Authorship PDF** — table: rows = notebooks, columns = group members  
+- [ ] **2 Kaggle submissions marked** as final  
 
 ---
 
-## Git workflow
+## Optional improvements
 
-```powershell
-# From ru-loan-approval-ny/
-git add .
-git commit -m "feat: add LightGBM model and feature engineering"
-git remote add origin <your-github-url>
-git push -u origin main
-```
-
-`data/` and `submissions/` are in `.gitignore` — only code and notebooks are tracked.
+| Task | Command / location |
+|------|------------------|
+| Faster Optuna | `python -m src.advanced --trials 15` |
+| Drop `State` (constant NY) | `src/features.py` |
+| SMOTE in CV | `notebooks/04_model_comparison.ipynb` |
+| Loan-size bins | `src/features.py` |
