@@ -37,7 +37,12 @@ ru-loan-approval-ny/
 ├── src/
 │   ├── features.py          # prepare_features()
 │   ├── train.py             # CLI: lr / rf / xgb / lgbm
-│   └── advanced.py          # TargetEncoder + ensemble + Optuna
+│   ├── advanced.py          # TargetEncoder + ensemble + Optuna (OOF objective)
+│   ├── cv_utils.py          # OOF CV, adversarial validation, time-CV
+│   └── submit_oof.py        # OOF submissions + base-rate variants
+├── docs/
+│   ├── MODELS.md            # Model/method descriptions for report
+│   └── DIAGNOSTICS.md       # Phase 0 drift analysis
 ├── submissions/             # Kaggle CSVs (not in git)
 ├── scripts/setup-kaggle.ps1
 ├── requirements.txt
@@ -64,32 +69,46 @@ kaggle competitions download -c ru-loan-approval-prediction-new-york -p data
 Expand-Archive data\ru-loan-approval-prediction-new-york.zip -DestinationPath data -Force
 ```
 
-### 3. Generate best submission (ensemble)
+### 3. Diagnose train/test drift (Phase 0)
+
+```powershell
+python -m src.cv_utils
+```
+
+### 4. Generate improved submissions
 
 ```powershell
 python -m src.advanced --no-optuna
-# → submissions/ensemble_advanced.csv
+# → ensemble_improved.csv, ensemble_baserate.csv
+
+python -m src.submit_oof --model rf_lgbm --repeats 1
+# → rf_lgbm_oof.csv, rf_lgbm_baserate.csv
 ```
 
-### 4. Single-model alternatives
+### 5. Upload to Kaggle
 
 ```powershell
-python -m src.train --model lgbm --output submissions/lgbm.csv
-python -m src.train --model rf   --output submissions/rf.csv
+kaggle competitions submit -c ru-loan-approval-prediction-new-york `
+  -f "submissions\rf_lgbm_oof.csv" -m "RF+LGBM OOF improved"
+
+kaggle competitions submit -c ru-loan-approval-prediction-new-york `
+  -f "submissions\ensemble_baserate.csv" -m "RF+LGBM base-rate 79.6pct"
 ```
 
 ---
 
 ## Score tracker
 
-| Run | CV Macro F1 | Val Macro F1 | Command | Submission |
-|-----|-------------|-------------|---------|------------|
-| LR baseline | 0.6452 | — | `python -m src.train --model lr` | `baseline.csv` |
-| RF | 0.7342 | 0.7445 | `python -m src.train --model rf` | `rf.csv` |
-| LightGBM | 0.7291 | 0.7505 | `python -m src.train --model lgbm` | `lgbm.csv` |
-| **Ensemble (recommended)** | **0.7441** | **0.7542** | `python -m src.advanced --no-optuna` | **`ensemble_advanced.csv`** |
-| Optuna 50 trials | 0.7371 @ trial 12 | — | `python -m src.advanced --trials 50` | aborted (20/50) |
-| **Kaggle public score** | — | — | upload above | _fill in after submit_ |
+| Run | OOF Macro F1 | Command | Submission file |
+|-----|-------------|---------|-----------------|
+| LR baseline | 0.6452 | `python -m src.train --model lr` | `baseline.csv` |
+| First Kaggle upload | — | ensemble_advanced | **public: 0.70211** |
+| RF+LGBM OOF (improved features) | **0.7452** | `python -m src.submit_oof --model rf_lgbm` | **`rf_lgbm_oof.csv`** |
+| RF+LGBM base-rate (~79.6% approve) | — | `python -m src.submit_oof --model rf_lgbm` | **`rf_lgbm_baserate.csv`** |
+| Ensemble OOF | 0.7440 | `python -m src.advanced --no-optuna` | `ensemble_improved.csv` |
+| Ensemble base-rate | — | `python -m src.advanced --no-optuna` | `ensemble_baserate.csv` |
+| Optuna (OOF threshold objective) | — | `python -m src.advanced --trials 20` | optional |
+| **Next Kaggle public** | — | upload candidates above | _fill in_ |
 
 ---
 

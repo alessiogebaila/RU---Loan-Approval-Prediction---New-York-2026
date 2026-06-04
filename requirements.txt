@@ -16,3 +16,6 @@ optuna>=3.5
 
 # Imbalanced-learn for SMOTE (optional Phase 2 experiment)
 imbalanced-learn>=0.12
+
+# Optional: native categorical boosting
+catboost>=1.2

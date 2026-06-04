@@ -9,9 +9,10 @@ Update checkboxes in this file and in `README.md` when a task is done.
 
 ## Kaggle (competition)
 
-- [ ] Upload `submissions/ensemble_advanced.csv` to [Kaggle competition](https://www.kaggle.com/competitions/ru-loan-approval-prediction-new-york)
-- [ ] Record public Macro F1 score in `README.md` score tracker
-- [ ] Try a second submission (e.g. `lgbm.csv`) if time allows
+- [x] Upload `ensemble_advanced.csv` — public score **0.70211**
+- [ ] Upload `rf_lgbm_oof.csv` and/or `rf_lgbm_baserate.csv` (improved pipeline)
+- [ ] Record new public Macro F1 scores in `README.md`
+- [ ] Try `ensemble_baserate.csv` if OOF-threshold underperforms on LB
 - [ ] **Mark 2 best submissions** as final on Kaggle before deadline
 
 ---
@@ -42,12 +43,13 @@ jupyter lab
 
 ## Code / repo (optional improvements)
 
-- [x] Feature engineering (`src/features.py`)
+- [x] Feature engineering (`src/features.py`) — State dropped, loan bins, RevLineCr categories
 - [x] Multi-model CLI (`src/train.py`)
-- [x] Ensemble + target encoding (`src/advanced.py`)
-- [ ] Drop constant `State` column in `prepare_features` (NY only)
-- [ ] Optuna tuning: `python -m src.advanced --trials 15` (optional; aborted at 20/50)
-- [ ] Update README public Kaggle score after upload
+- [x] Ensemble + target encoding (`src/advanced.py`) — Optuna uses OOF threshold objective
+- [x] OOF diagnostics (`src/cv_utils.py`) — adversarial AUC 0.635, moderate drift
+- [x] OOF submissions (`src/submit_oof.py`) — base-rate + tuned variants
+- [x] Model docs (`docs/MODELS.md`, `docs/DIAGNOSTICS.md`)
+- [ ] Optional: `python -m src.advanced --trials 20`
 
 ---
 
