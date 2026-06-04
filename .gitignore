@@ -40,4 +40,5 @@ optuna.db
 Thumbs.db
 .idea/
 .vscode/
+anaconda_projects/
 *.swp
