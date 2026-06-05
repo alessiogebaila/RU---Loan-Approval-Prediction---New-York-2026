@@ -29,6 +29,7 @@ from src.cv_utils import (
 from src.features import (
     ID_COL,
     TARGET_COL,
+    get_rare_cities,
     load_train_test,
     prepare_features,
     split_features_target,
@@ -114,8 +115,9 @@ def main() -> None:
 
     train, test = load_train_test()
     X_raw, y = split_features_target(train)
-    X = prepare_features(X_raw)
-    X_test = prepare_features(test)
+    rare = get_rare_cities(X_raw)
+    X = prepare_features(X_raw, rare_cities=rare)
+    X_test = prepare_features(test, rare_cities=rare)
     ids = test[ID_COL]
     train_rate = base_rate_threshold(y)
 

@@ -94,9 +94,27 @@ def _encode_revline(series: pd.Series) -> pd.Series:
     )
 
 
-def prepare_features(X: pd.DataFrame) -> pd.DataFrame:
+def get_rare_cities(X: pd.DataFrame, threshold: int = 5) -> frozenset:
+    """Return a frozenset of City values that appear fewer than `threshold` times.
+
+    Fit on training data only; pass the result to prepare_features() for both
+    train and test so unseen/rare cities are bucketed consistently.
+    """
+    if "City" not in X.columns:
+        return frozenset()
+    counts = X["City"].astype(str).value_counts()
+    return frozenset(counts[counts < threshold].index)
+
+
+def prepare_features(X: pd.DataFrame, rare_cities: frozenset | None = None) -> pd.DataFrame:
     """
     Full feature engineering applied identically to train and test.
+
+    Parameters
+    ----------
+    X : raw feature DataFrame (no target column).
+    rare_cities : frozenset from get_rare_cities(X_train). When provided, City
+        values in the set are replaced with '__rare__' before encoding.
     """
     out = X.drop(columns=[c for c in _DROP_COLS if c in X.columns]).copy()
 
@@ -167,6 +185,10 @@ def prepare_features(X: pd.DataFrame) -> pd.DataFrame:
         ne = pd.to_numeric(out["NewExist"], errors="coerce")
         ne = ne.where(ne != 0, np.nan)
         out["NewExist"] = ne.fillna(ne.median()).astype("Int8")
+
+    if "City" in out.columns and rare_cities is not None:
+        city_str = out["City"].astype(str)
+        out["City"] = city_str.where(~city_str.isin(rare_cities), "__rare__")
 
     for col in out.select_dtypes(include=["object", "string"]).columns:
         out[col] = out[col].astype(str).replace(

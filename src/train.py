@@ -33,6 +33,7 @@ from src.features import (
     ID_COL,
     TARGET_COL,
     build_preprocessor,
+    get_rare_cities,
     load_train_test,
     prepare_features,
     split_features_target,
@@ -137,8 +138,9 @@ def train_and_predict(
     X_raw, y_train = split_features_target(train)
 
     test_ids = test[ID_COL].copy()
-    X_train = prepare_features(X_raw)
-    X_test = prepare_features(test)
+    rare = get_rare_cities(X_raw)
+    X_train = prepare_features(X_raw, rare_cities=rare)
+    X_test = prepare_features(test, rare_cities=rare)
 
     clf = _make_clf(model_name)
     preprocessor = build_preprocessor(X_train)

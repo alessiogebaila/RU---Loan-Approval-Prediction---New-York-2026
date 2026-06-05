@@ -34,6 +34,7 @@ from src.cv_utils import (
 from src.features import (
     ID_COL,
     TARGET_COL,
+    get_rare_cities,
     load_train_test,
     prepare_features,
     split_features_target,
@@ -43,7 +44,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 TARGET_ENCODE_COLS = ["Bank", "City"]
 # Higher smoothing for high-cardinality City reduces overfitting on rare levels
-TARGET_ENCODER_SMOOTH = 25.0
+TARGET_ENCODER_SMOOTH = 50.0
 
 
 def _get_col_groups(X: pd.DataFrame) -> tuple[list[str], list[str], list[str]]:
@@ -229,8 +230,9 @@ def main(n_optuna_trials: int = 20, run_optuna_flag: bool = True) -> None:
     train_raw, test_raw = load_train_test()
     X_raw, y = split_features_target(train_raw)
     test_ids = test_raw[ID_COL]
-    X_train = prepare_features(X_raw)
-    X_test = prepare_features(test_raw)
+    rare = get_rare_cities(X_raw)
+    X_train = prepare_features(X_raw, rare_cities=rare)
+    X_test = prepare_features(test_raw, rare_cities=rare)
     print(f"Train: {X_train.shape}   Test: {X_test.shape}")
 
     numeric, te_cols, ohe_cols = _get_col_groups(X_train)
